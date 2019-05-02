@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  Text,
+	Text,
 	Image,
 	Animated,
 	StyleSheet,
@@ -27,25 +27,40 @@ export default class HomeScreen extends React.Component {
 	constructor() {
 		super();
 
-    this.position = new Animated.ValueXY();
-    this.rotate = this.position.x.interpolate({
-      inputRange: [-WIDTH / 2, 0, WIDTH / 2],
-      outputRange: ['-10deg', '0deg', '10deg'],
-      extrapolate: 'clamp'
-    })
+		this.position = new Animated.ValueXY();
+		this.rotate = this.position.x.interpolate({
+			inputRange: [-WIDTH / 2, 0, WIDTH / 2],
+			outputRange: ["-10deg", "0deg", "10deg"],
+			extrapolate: "clamp"
+		});
+		this.acceptOpacity = this.position.x.interpolate({
+			inputRange: [-WIDTH / 2, 0, WIDTH / 2],
+			outputRange: [0, 0, 1],
+			extrapolate: "clamp"
+		});
+		this.rejectOpacity = this.position.x.interpolate({
+			inputRange: [-WIDTH / 2, 0, WIDTH / 2],
+			outputRange: [1, 0, 0],
+			extrapolate: "clamp"
+		});
+		this.nextScaleAndOpacity = this.position.x.interpolate({
+			inputRange: [-WIDTH / 2, 0, WIDTH / 2],
+			outputRange: [1, 0.25, 1],
+			extrapolate: "clamp"
+		});
 
-    this.rotateTranslate = {
-      transform: [
-        {
-          rotate: this.rotate
-        },
-        ...this.position.getTranslateTransform()
-      ]
-    }
+		this.rotateTranslate = {
+			transform: [
+				{
+					rotate: this.rotate
+				},
+				...this.position.getTranslateTransform()
+			]
+		};
 
 		this.state = {
 			index: 0
-    }
+		};
 	}
 
 	componentWillMount() {
@@ -57,48 +72,120 @@ export default class HomeScreen extends React.Component {
 					y: gestureState.dy
 				});
 			},
-			onPanResponderRelease: (evt, gestureState) => {}
+			onPanResponderRelease: (evt, gestureState) => {
+				let x = 0;
+				let y = 0;
+				let accepted,
+					rejected = false;
+				if (gestureState.dx > WIDTH / 1.5) {
+					x = WIDTH + 100;
+					y = gestureState.dy;
+					accepted = true;
+					// accept
+				} else if (gestureState.dx < -WIDTH / 1.5) {
+					x = -WIDTH - 100;
+					y = gestureState.dy;
+					rejected = true;
+					// reject
+				}
+
+				Animated.spring(this.position, {
+					toValue: { x, y },
+					friction: 4
+				}).start(() => {
+					// accept/reject request
+					if (accepted || rejected) {
+						this.setState({ index: this.state.index + 1 }, () => {
+							this.position.setValue({ x: 0, y: 0 });
+						});
+					}
+				});
+			}
 		});
 	}
 
 	renderRequests = () => {
 		return requests
 			.map(({ name, image }, index) => {
-        let panResponder = {}
-        let position = {}
+				let panResponder = {};
+				let position = {};
+				let acceptOpacity = 0;
+				let rejectOpacity = 0;
+				let cardScaleOpacity = 0;
 
-        if (index < this.state.index) {
-          return null
-        } else if (index === this.state.index) {
-          panResponder = this.PanResponder.panHandlers
-          position = this.rotateTranslate;
-        }
+				if (index < this.state.index) {
+					return null;
+				} else if (index === this.state.index) {
+					panResponder = this.PanResponder.panHandlers;
+					position = this.rotateTranslate;
+					acceptOpacity = this.acceptOpacity;
+					rejectOpacity = this.rejectOpacity;
+					cardScaleOpacity = 1;
+				} else if (index === this.state.index + 1) {
+					cardScaleOpacity = this.nextScaleAndOpacity;
+				}
 
 				return (
 					<Animated.View
 						{...panResponder}
 						key={index}
 						style={[
-							position,
 							{
+								transform: [{ scale: cardScaleOpacity }],
+								opacity: cardScaleOpacity,
 								position: "absolute",
 								height: HEIGHT - 120,
 								width: WIDTH,
 								padding: 10,
 								paddingTop: 40
-							}
+							},
+							position
 						]}
 					>
-            <Animated.View style={{position: 'absolute', top: 50, left: 50, zIndex: 100}}>
-              <Text style={{
-                borderWidth: 1,
-                borderColor: 'green',
-                color: 'green',
-                fontSize: 32,
-                fontWeight: '800',
-                padding: 10
-              }}>Like</Text>
-            </Animated.View>
+						<Animated.View
+							style={{
+								opacity: acceptOpacity,
+								position: "absolute",
+								top: 50,
+								left: 50,
+								zIndex: 100
+							}}
+						>
+							<Text
+								style={{
+									borderWidth: 1,
+									borderColor: "green",
+									color: "green",
+									fontSize: 32,
+									fontWeight: "800",
+									padding: 10
+								}}
+							>
+								Accept
+							</Text>
+						</Animated.View>
+						<Animated.View
+							style={{
+								opacity: rejectOpacity,
+								position: "absolute",
+								top: 50,
+								right: 50,
+								zIndex: 100
+							}}
+						>
+							<Text
+								style={{
+									borderWidth: 1,
+									borderColor: "red",
+									color: "red",
+									fontSize: 32,
+									fontWeight: "800",
+									padding: 10
+								}}
+							>
+								Reject
+							</Text>
+						</Animated.View>
 						<Image
 							style={{
 								flex: 1,
