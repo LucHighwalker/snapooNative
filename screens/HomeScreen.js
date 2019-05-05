@@ -9,13 +9,6 @@ import {
 	PanResponder
 } from "react-native";
 
-const requests = [
-	{ name: "hi", image: require("../assets/images/0.jpg") },
-	{ name: "hi", image: require("../assets/images/1.jpg") },
-	{ name: "hi", image: require("../assets/images/2.jpg") },
-	{ name: "hi", image: require("../assets/images/3.jpg") }
-];
-
 const HEIGHT = Dimensions.get("window").height;
 const WIDTH = Dimensions.get("window").width;
 
@@ -59,11 +52,26 @@ export default class HomeScreen extends React.Component {
 		};
 
 		this.state = {
-			index: 0
+			index: 0,
+			requests: []
 		};
 	}
 
 	componentWillMount() {
+		fetch(
+			"https://poop-scooper.herokuapp.com/loc/city/5ca938d677d0070004db47a0"
+		)
+			.then(response => response.json())
+			.then(responseJson => {
+				console.warn(responseJson);
+				this.setState({
+					requests: responseJson.city.locations
+				});
+			})
+			.catch(error => {
+				console.error(error);
+			});
+
 		this.PanResponder = PanResponder.create({
 			onStartShouldSetPanResponder: (evt, gestureState) => true,
 			onPanResponderMove: (evt, gestureState) => {
@@ -77,12 +85,12 @@ export default class HomeScreen extends React.Component {
 				let y = 0;
 				let accepted,
 					rejected = false;
-				if (gestureState.dx > WIDTH / 1.5) {
+				if (gestureState.dx > WIDTH / 2) {
 					x = WIDTH + 100;
 					y = gestureState.dy;
 					accepted = true;
 					// accept
-				} else if (gestureState.dx < -WIDTH / 1.5) {
+				} else if (gestureState.dx < -WIDTH / 2) {
 					x = -WIDTH - 100;
 					y = gestureState.dy;
 					rejected = true;
@@ -93,25 +101,32 @@ export default class HomeScreen extends React.Component {
 					toValue: { x, y },
 					friction: 4
 				}).start(() => {
-					// accept/reject request
-					if (accepted || rejected) {
-						this.setState({ index: this.state.index + 1 }, () => {
-							this.position.setValue({ x: 0, y: 0 });
-						});
+					if (accepted) {
+						// accepted request
+					} else if (rejected) {
+						// reject request
 					}
 				});
+
+				if (accepted || rejected) {
+					this.setState({ index: this.state.index + 1 }, () => {
+						this.position.setValue({ x: 0, y: 0 });
+					});
+				}
 			}
 		});
 	}
 
 	renderRequests = () => {
-		return requests
-			.map(({ name, image }, index) => {
+		return this.state.requests
+			.map(({ imageURL }, index) => {
 				let panResponder = {};
 				let position = {};
 				let acceptOpacity = 0;
 				let rejectOpacity = 0;
 				let cardScaleOpacity = 0;
+
+				const image = { uri: imageURL };
 
 				if (index < this.state.index) {
 					return null;
