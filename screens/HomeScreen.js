@@ -9,6 +9,8 @@ import {
 	PanResponder
 } from "react-native";
 
+import { getRequests } from "../backend";
+
 const HEIGHT = Dimensions.get("window").height;
 const WIDTH = Dimensions.get("window").width;
 
@@ -52,20 +54,16 @@ export default class HomeScreen extends React.Component {
 		};
 
 		this.state = {
-			index: 0,
+			index: 1, // change back to 0
 			requests: []
 		};
 	}
 
 	componentWillMount() {
-		fetch(
-			"https://poop-scooper.herokuapp.com/loc/city/5ca938d677d0070004db47a0"
-		)
-			.then(response => response.json())
-			.then(responseJson => {
-				console.warn(responseJson);
+		getRequests("5ca938d677d0070004db47a0")
+			.then(requests => {
 				this.setState({
-					requests: responseJson.city.locations
+					requests
 				});
 			})
 			.catch(error => {
