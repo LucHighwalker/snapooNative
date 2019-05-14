@@ -12,3 +12,16 @@ export function getRequests(cityID) {
 			});
 	})
 }
+
+export function getRoute(cityID) {
+	return new Promise((resolve, reject) => {
+		fetch(`${url}/loc/route/${cityID}`)
+			.then(response => response.json())
+			.then(json => {
+				resolve(json.route);
+			})
+			.catch(error => {
+				reject(error)
+			});
+	})
+}
