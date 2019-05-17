@@ -53,8 +53,8 @@ export default class LinksScreen extends React.Component {
 			<MapView
 				style={{ flex: 1 }}
 				initialRegion={{
-					latitude: 37.78825,
-					longitude: -122.4324,
+					latitude: route[0].latitude,
+					longitude: route[0].longitude,
 					latitudeDelta: 0.0922,
 					longitudeDelta: 0.0421
 				}}
@@ -63,6 +63,7 @@ export default class LinksScreen extends React.Component {
 				<MapViewDirections
 					origin={route[0]}
 					destination={route[route.length - 1]}
+					waypoints={route}
 					apikey={GOOGLE_MAPS_APIKEY}
 					strokeWidth={3}
 					strokeColor="blue"
